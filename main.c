@@ -24,7 +24,7 @@ int main(int argc, char *argv[]) {
 
 	dir = opendir(DIR_NAME);
 	if(dir == NULL){
-		fprintf(stderr, "opendir failed on '%s'", DIR_NAME);
+		printf("opendir failed on '%s'", DIR_NAME);
 		return 1;
 	}
 
@@ -33,7 +33,7 @@ int main(int argc, char *argv[]) {
 		unsigned long int delay = strtoul(argv[1], &endptr, 10);
 
 		if (*endptr != '\0' || delay > UINT_MAX) {
-		fprintf(stderr, "Invalid delay value or value too large\n");
+		printf("Invalid delay value or value too large\n");
 		return 1;
 		}
 
@@ -41,7 +41,7 @@ int main(int argc, char *argv[]) {
 	}
 
 	if (ems_init(state_access_delay_ms)) {
-		fprintf(stderr, "Failed to initialize EMS\n");
+		printf("Failed to initialize EMS\n");
 		return 1;
 	}
 
@@ -54,7 +54,7 @@ int main(int argc, char *argv[]) {
 
 		in_path = malloc(sizeof(char) * (strlen(DIR_NAME) + 1 + strlen(dp->d_name) + 1));
 		if(in_path == NULL){
-			fprintf(stderr, "malloc failed for in_path\n");
+			printf("malloc failed for in_path\n");
 			return 1;
 		}
 		strcpy(in_path, DIR_NAME);
@@ -66,7 +66,7 @@ int main(int argc, char *argv[]) {
 		name_size = strlen(dp->d_name) - strlen(strchr(dp->d_name, '.'));
 		out_path = malloc(sizeof(char) * (strlen(DIR_NAME) + 1 + name_size + strlen(OUT_EXT) + 1));
 		if(out_path == NULL){
-			fprintf(stderr, "malloc failed for out_path\n");
+			printf("malloc failed for out_path\n");
 			return 1;
 		}
 		strcpy(out_path, DIR_NAME);
@@ -90,12 +90,12 @@ int main(int argc, char *argv[]) {
 			switch (get_next(in_id)) {
 				case CMD_CREATE:
 					if (parse_create(STDIN_FILENO, &event_id, &num_rows, &num_columns) != 0) {
-						fprintf(stderr, "Invalid command. See HELP for usage\n");
+						printf("Invalid command. See HELP for usage\n");
 						continue;
 					}
 
 					if (ems_create(event_id, num_rows, num_columns)) {
-						fprintf(stderr, "Failed to create event\n");
+						printf("Failed to create event\n");
 					}
 
 					break;
@@ -105,31 +105,31 @@ int main(int argc, char *argv[]) {
 						parse_reserve(in_id, MAX_RESERVATION_SIZE, &event_id, xs, ys);
 
 					if (num_coords == 0) {
-						fprintf(stderr, "Invalid command. See HELP for usage\n");
+						printf("Invalid command. See HELP for usage\n");
 						continue;
 					}
 
 					if (ems_reserve(event_id, num_coords, xs, ys)) {
-						fprintf(stderr, "Failed to reserve seats\n");
+						printf("Failed to reserve seats\n");
 					}
 
 					break;
 
 				case CMD_SHOW:
 					if (parse_show(in_id, &event_id) != 0) {
-						fprintf(stderr, "Invalid command. See HELP for usage\n");
+						printf("Invalid command. See HELP for usage\n");
 						continue;
 					}
 
 					if (ems_show(event_id, out_id)) {
-						fprintf(stderr, "Failed to show event\n");
+						printf("Failed to show event\n");
 					}
 
 					break;
 
 				case CMD_LIST_EVENTS:
 					if (ems_list_events(out_id)) {
-						fprintf(stderr, "Failed to list events\n");
+						printf("Failed to list events\n");
 					}
 
 					break;
@@ -137,7 +137,7 @@ int main(int argc, char *argv[]) {
 				case CMD_WAIT:
 					if (parse_wait(in_id, &delay, NULL) ==
 						-1) { // thread_id is not implemented
-						fprintf(stderr, "Invalid command. See HELP for usage\n");
+						printf("Invalid command. See HELP for usage\n");
 						continue;
 					}
 
@@ -149,7 +149,7 @@ int main(int argc, char *argv[]) {
 					break;
 
 				case CMD_INVALID:
-					fprintf(stderr, "Invalid command. See HELP for usage\n");
+					printf("Invalid command. See HELP for usage\n");
 					break;
 
 				case CMD_HELP:
