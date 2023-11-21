@@ -18,9 +18,10 @@ int main(int argc, char *argv[]) {
 	unsigned int state_access_delay_ms = STATE_ACCESS_DELAY_MS;
 	DIR *dir;
 	struct dirent *dp;
-	int in_id = 0, out_id = 0;
+	int in_id = 0, out_id = 1, end_of_file = 0;
 	char *in_path, *out_path;
 	size_t name_size;
+	mode_t write_perms;
 
 	dir = opendir(DIR_NAME);
 	if(dir == NULL){
@@ -40,10 +41,7 @@ int main(int argc, char *argv[]) {
 		state_access_delay_ms = (unsigned int) delay;
 	}
 
-	if (ems_init(state_access_delay_ms)) {
-		printf("Failed to initialize EMS\n");
-		return 1;
-	}
+	write_perms = 00400 | 00200 | 00040 | 00020 | 00004;
 
 	for (;;){
 		dp = readdir(dir);
@@ -60,7 +58,6 @@ int main(int argc, char *argv[]) {
 		strcpy(in_path, DIR_NAME);
 		strcat(in_path, "/");
 		strcat(in_path, dp->d_name);
-		printf("%s\n", in_path);
 		in_id = open(in_path,O_RDONLY);
 		
 		name_size = strlen(dp->d_name) - strlen(strchr(dp->d_name, '.'));
@@ -73,11 +70,19 @@ int main(int argc, char *argv[]) {
 		strcat(out_path, "/");
 		strncat(out_path, dp->d_name,name_size);
 		strcat(out_path, OUT_EXT);
-		out_id = open(out_path, O_CREAT);
+		out_id = open(out_path, O_CREAT | O_WRONLY, write_perms);
 
-		printf("%d: %s\n", in_id, in_path);
+		/*printf("%d: %s\n", in_id, in_path);
 		printf("%d: %s\n", out_id, out_path);
-		getchar();
+		getchar();*/
+
+		free(in_path);
+		free(out_path);
+
+		if (ems_init(state_access_delay_ms)) {
+			printf("Failed to initialize EMS\n");
+			return 1;
+		}
 
 		while (1) {
 			unsigned int event_id, delay;
@@ -85,11 +90,11 @@ int main(int argc, char *argv[]) {
 			size_t xs[MAX_RESERVATION_SIZE], ys[MAX_RESERVATION_SIZE];
 
 			printf("> ");
-			fflush(stdout);
+			//fflush(stdout);
 
 			switch (get_next(in_id)) {
 				case CMD_CREATE:
-					if (parse_create(STDIN_FILENO, &event_id, &num_rows, &num_columns) != 0) {
+					if (parse_create(in_id, &event_id, &num_rows, &num_columns) != 0) {
 						printf("Invalid command. See HELP for usage\n");
 						continue;
 					}
@@ -121,14 +126,14 @@ int main(int argc, char *argv[]) {
 						continue;
 					}
 
-					if (ems_show(event_id, out_id)) {
+					if (ems_show(event_id, STDOUT_FILENO)) {
 						printf("Failed to show event\n");
 					}
 
 					break;
 
 				case CMD_LIST_EVENTS:
-					if (ems_list_events(out_id)) {
+					if (ems_list_events(STDOUT_FILENO)) {
 						printf("Failed to list events\n");
 					}
 
@@ -169,13 +174,20 @@ int main(int argc, char *argv[]) {
 					break;
 
 				case EOC:
+					if (ems_list_events(out_id)) {
+						printf("Failed to list events\n");
+					}
 					ems_terminate();
-			return 0;
+				end_of_file = 1;
+			}
+			if(end_of_file){
+				end_of_file = 0;
+				break;
 			}
 		}
-		
+		close(in_id);
+		close(out_id);	
 	}
-	
-
-	
+	closedir(dir);
+	return 0;
 }
