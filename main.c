@@ -10,7 +10,6 @@
 #include "operations.h"
 #include "parser.h"
 
-#define DIR_NAME "jobs"
 #define IN_EXT ".jobs"
 #define OUT_EXT ".out"
 
@@ -23,13 +22,12 @@ int main(int argc, char *argv[]) {
 	size_t name_size;
 	mode_t write_perms;
 
-	dir = opendir(DIR_NAME);
-	if(dir == NULL){
-		printf("opendir failed on '%s'", DIR_NAME);
+	if(argc < 2){
+		printf("A directory path for the .jobs files is required\n");
 		return 1;
 	}
 
-	if (argc > 1) {
+	if (argc > 2) {
 		char *endptr;
 		unsigned long int delay = strtoul(argv[1], &endptr, 10);
 
@@ -41,6 +39,12 @@ int main(int argc, char *argv[]) {
 		state_access_delay_ms = (unsigned int) delay;
 	}
 
+	dir = opendir(argv[1]);
+	if(dir == NULL){
+		printf("opendir failed on '%s'", argv[1]);
+		return 1;
+	}
+
 	write_perms = 00400 | 00200 | 00040 | 00020 | 00004;
 
 	for (;;){
@@ -50,31 +54,27 @@ int main(int argc, char *argv[]) {
 		if(strchr(dp->d_name, '.') == NULL || strcmp(strchr(dp->d_name, '.'), IN_EXT) != 0)
 			continue;
 
-		in_path = malloc(sizeof(char) * (strlen(DIR_NAME) + 1 + strlen(dp->d_name) + 1));
+		in_path = malloc(sizeof(char) * (strlen(argv[1]) + 1 + strlen(dp->d_name) + 1));
 		if(in_path == NULL){
 			printf("malloc failed for in_path\n");
 			return 1;
 		}
-		strcpy(in_path, DIR_NAME);
+		strcpy(in_path, argv[1]);
 		strcat(in_path, "/");
 		strcat(in_path, dp->d_name);
 		in_id = open(in_path,O_RDONLY);
 		
 		name_size = strlen(dp->d_name) - strlen(strchr(dp->d_name, '.'));
-		out_path = malloc(sizeof(char) * (strlen(DIR_NAME) + 1 + name_size + strlen(OUT_EXT) + 1));
+		out_path = malloc(sizeof(char) * (strlen(argv[1]) + 1 + name_size + strlen(OUT_EXT) + 1));
 		if(out_path == NULL){
 			printf("malloc failed for out_path\n");
 			return 1;
 		}
-		strcpy(out_path, DIR_NAME);
+		strcpy(out_path, argv[1]);
 		strcat(out_path, "/");
 		strncat(out_path, dp->d_name,name_size);
 		strcat(out_path, OUT_EXT);
 		out_id = open(out_path, O_CREAT | O_WRONLY, write_perms);
-
-		/*printf("%d: %s\n", in_id, in_path);
-		printf("%d: %s\n", out_id, out_path);
-		getchar();*/
 
 		free(in_path);
 		free(out_path);
@@ -176,6 +176,9 @@ int main(int argc, char *argv[]) {
 				case EOC:
 					if (ems_list_events(out_id)) {
 						printf("Failed to list events\n");
+					}
+					if (ems_show(event_id, out_id)) {
+						printf("Failed to show event\n");
 					}
 					ems_terminate();
 				end_of_file = 1;
