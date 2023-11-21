@@ -6,6 +6,8 @@ CFLAGS = -g -std=c17 -D_POSIX_C_SOURCE=200809L \
 		 -Wcast-align -Wconversion -Wfloat-equal -Wformat=2 -Wnull-dereference -Wshadow -Wsign-conversion -Wswitch-enum -Wundef -Wunreachable-code -Wunused \
 		 -fsanitize=address -fsanitize=undefined
 
+DIR_PATH = jobs
+
 ifneq ($(shell uname -s),Darwin) # if not MacOS
 	CFLAGS += -fmax-errors=5
 endif
@@ -19,10 +21,12 @@ ems: main.c constants.h operations.o parser.o eventlist.o
 	$(CC) $(CFLAGS) -c ${@:.o=.c}
 
 run: ems
-	@./ems
+	@./ems $(DIR_PATH)
 
 clean:
-	rm -f *.o jobs/*.out ems
+	rm -f *.o $(DIR_PATH)/*.out ems
+
+full: clean all run
 
 format:
 	@which clang-format >/dev/null 2>&1 || echo "Please install clang-format to run this command"
