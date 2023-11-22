@@ -4,9 +4,9 @@ CC = gcc
 CFLAGS = -g -std=c17 -D_POSIX_C_SOURCE=200809L \
 		 -Wall -Werror -Wextra \
 		 -Wcast-align -Wconversion -Wfloat-equal -Wformat=2 -Wnull-dereference -Wshadow -Wsign-conversion -Wswitch-enum -Wundef -Wunreachable-code -Wunused \
-		 -fsanitize=address -fsanitize=undefined
+		 #-fsanitize=address -fsanitize=undefined
 
-DIR_PATH = jobs
+DIR_PATH = ../jobs
 
 ifneq ($(shell uname -s),Darwin) # if not MacOS
 	CFLAGS += -fmax-errors=5
@@ -24,7 +24,7 @@ run: ems
 	@./ems $(DIR_PATH)
 
 clean:
-	rm -f *.o $(DIR_PATH)/*.out ems
+	rm -f *.o $(DIR_PATH)/*.*out ems
 
 full: clean all run
 
