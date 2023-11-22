@@ -3,7 +3,7 @@ Projeto da Cadeira de Sistemas Operativos no ano letivo 2023-2024
 
 Ver o ficheiro "Projeto SO - Parte 1.pdf" com os requisitos do programa!
 
-Makefile:
+- Makefile:
 	- make: Compila todos os ficheiros do programa.
 	- make clean: Remove o executável, os ficheiros objetos e ainda os outputs dos testes.
 	- make run: corre o programa com os ficheiros de teste presentes na diretoria DIR_PATH indicada no topo do ficheiro (pode ser alterada conforme necessário).
