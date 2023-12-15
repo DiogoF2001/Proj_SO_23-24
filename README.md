@@ -8,3 +8,4 @@ Ver o ficheiro "Projeto SO - Parte 1.pdf" com os requisitos do programa!
 	- make clean: Remove o executável, os ficheiros objetos e ainda os outputs dos testes.
 	- make run: corre o programa com os ficheiros de teste presentes na diretoria DIR_PATH indicada no topo do ficheiro (pode ser alterada conforme necessário).
 	- make full: Realiza o comando make clean, seguido de make all (default do make) e por fim o make run, de forma a garantir que executa os programas de teste sobre uma compilação da versão do programa mais recente.
+	- make test: Equivalente a "make run" mas para TEST_DIR_PATH, de forma a ser mais fácil de testar para um subconjunto de testes.
