@@ -1,4 +1,4 @@
 *.o
 jobs/*.*out
-j_test/*.*
+j_test/*.*out
 ems
