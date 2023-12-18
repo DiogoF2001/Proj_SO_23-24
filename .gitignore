@@ -2,3 +2,4 @@
 jobs/*.*out
 j_test/*.*out
 ems
+*.zip
