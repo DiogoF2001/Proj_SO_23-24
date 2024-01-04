@@ -12,7 +12,7 @@
 #include "operations.h"
 #include "pipe_parser.h"
 
-void* thread_func(void*);
+void *thread_func(void *);
 
 //Global Variables
 pthread_mutex_t buffer_lock;
@@ -33,25 +33,29 @@ int main(int argc, char *argv[])
 	pthread_t tid;
 	int i;
 
-	if(argc < 2 || argc > 3){
+	if (argc < 2 || argc > 3)
+	{
 		fprintf(stderr, "Usage: %s\n <pipe_path> [delay]\n", argv[0]);
 		exit(EXIT_FAILURE);
 	}
 
 	in_path = argv[1];
-	if(in_path == NULL){
+	if (in_path == NULL)
+	{
 		fprintf(stderr, "Error getting the name of the pipe!");
 		exit(EXIT_FAILURE);
 	}
 
 	// Remove pipe if it does not exist
-	if (unlink(in_path) != 0 && errno != ENOENT) {
+	if (unlink(in_path) != 0 && errno != ENOENT)
+	{
 		fprintf(stderr, "[ERR]: unlink(%s) failed: %s\n", in_path, strerror(errno));
 		exit(EXIT_FAILURE);
 	}
 
 	// Create pipe
-	if (mkfifo(in_path, 0640) != 0) {
+	if (mkfifo(in_path, 0640) != 0)
+	{
 		fprintf(stderr, "[ERR]: mkfifo failed: %s\n", strerror(errno));
 		exit(EXIT_FAILURE);
 	}
@@ -87,7 +91,8 @@ int main(int argc, char *argv[])
 	// Open pipe for reading
 	// This waits for someone to open it for writing
 	incoming = open(in_path, O_RDONLY);
-	if (incoming == -1) {
+	if (incoming == -1)
+	{
 		fprintf(stderr, "[ERR]: open failed: %s\n", strerror(errno));
 		exit(EXIT_FAILURE);
 	}
@@ -138,11 +143,12 @@ int main(int argc, char *argv[])
 	return 0;
 }
 
-void* thread_func(void *args){
+void *thread_func(void *args)
+{
 	unsigned int event_id, quit = 0;
 	int func_ret = 0, in, out;
 	char OP_CODE;
-	t_args *t = (t_args*) args;
+	t_args *t = (t_args *)args;
 	ssize_t ret = -1;
 	size_t num_rows, num_cols, num_coords;
 	size_t *xs = NULL, *ys = NULL;
