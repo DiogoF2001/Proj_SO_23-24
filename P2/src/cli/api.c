@@ -2,6 +2,11 @@
 #include <stdio.h>
 #include <errno.h>
 #include <fcntl.h>
+#include <unistd.h>
+#include <string.h>
+#include <sys/types.h>
+#include <sys/stat.h>
+#include <stdlib.h>
 
 /*Variaveis Globais*/
 int request, response, session_id;
@@ -9,43 +14,44 @@ int request, response, session_id;
 int ems_setup(char const *req_pipe_path, char const *resp_pipe_path, char const *server_pipe_path)
 {
   // TODO: create pipes and connect to the server
+  size_t i;
   if (unlink(req_pipe_path) != 0 && errno != ENOENT)
   {
     fprintf(stderr, "[ERR]: unlink(%s) failed: %s\n", req_pipe_path,
             strerror(errno));
-    exit(1);
+    return 1;
   }
 
   if (unlink(resp_pipe_path) != 0 && errno != ENOENT)
   {
     fprintf(stderr, "[ERR]: unlink(%s) failed: %s\n", resp_pipe_path,
             strerror(errno));
-    exit(1);
+    return 1;
   }
 
   if (mkfifo(req_pipe_path, 0640) != 0 || mkfifo(resp_pipe_path, 0640) != 0)
   {
-    fprintf(stderr, "[ERR]: mkfifo failed: %s\n", stderror(errno));
+    fprintf(stderr, "[ERR]: mkfifo failed\n");
     return 1;
   }
 
   int serv = open(server_pipe_path, O_WRONLY);
   if (serv == -1)
   {
-    fprintf(stderr, "[ERR]: open failed: %s\n", strerror(errno));
+    fprintf(stderr, "[ERR]: open failed\n");
     return 1;
   }
 
   char *source = malloc(sizeof(char) * (1 + 40 + 40));
   source[0] = '1';
-  strncy(source + 1, req_pipe_path, strlen(req_pipe_path));
-  for (int i = strlen(req_pipe_path) + 1; i < 40 + 1; i++)
+  strncpy(source + 1, req_pipe_path, strlen(req_pipe_path));
+  for (i = strlen(req_pipe_path) + 1; i < 40 + 1; i++)
   {
     source[i] = '\0';
   }
 
-  strncy(source + 1 + 40, resp_pipe_path, strlen(resp_pipe_path));
-  for (int i = strlen(resp_pipe_path) + 1 + 40; i < 1 + 40 + 40; i++)
+  strncpy(source + 1 + 40, resp_pipe_path, strlen(resp_pipe_path));
+  for (i = strlen(resp_pipe_path) + 1 + 40; i < 1 + 40 + 40; i++)
   {
     source[i] = '\0';
   }
@@ -136,7 +142,7 @@ int ems_reserve(unsigned int event_id, size_t num_seats, size_t *xs, size_t *ys)
 {
   // TODO: send reserve request to the server (through the request pipe) and wait for the response (through the response pipe)
   int ret;
-  size_t val;
+  size_t val, i;
 
   if (write(request, "4", sizeof(char) == -1))
   {
@@ -158,7 +164,7 @@ int ems_reserve(unsigned int event_id, size_t num_seats, size_t *xs, size_t *ys)
     return 1;
   }
 
-  for (int i = 0; i < num_seats; i++)
+  for (i = 0; i < num_seats; i++)
   {
     val = xs[i];
     if (write(request, &val, sizeof(size_t)) != sizeof(size_t))
@@ -167,7 +173,7 @@ int ems_reserve(unsigned int event_id, size_t num_seats, size_t *xs, size_t *ys)
     }
   }
 
-  for (int i = 0; i < num_seats; i++)
+  for (i = 0; i < num_seats; i++)
   {
     val = ys[i];
     if (write(request, &val, sizeof(size_t)) != sizeof(size_t))
@@ -179,10 +185,7 @@ int ems_reserve(unsigned int event_id, size_t num_seats, size_t *xs, size_t *ys)
   if (read(response, &ret, sizeof(int)) == -1)
     return 1;
 
-  if (ret == num_seats)
-    return 1;
-
-  return 0;
+  return ret;
 }
 
 int ems_show(int out_fd, unsigned int event_id)
@@ -190,7 +193,7 @@ int ems_show(int out_fd, unsigned int event_id)
   // TODO: send show request to the server (through the request pipe) and wait for the response (through the response pipe)
   int ret;
   unsigned int seat;
-  size_t rows, cols;
+  size_t rows, cols, i, j;
 
   if (write(request, "5", sizeof(char) == -1))
   {
@@ -228,9 +231,9 @@ int ems_show(int out_fd, unsigned int event_id)
     return 1;
   }
 
-  for (size_t i = 0; i < rows; i++)
+  for (i = 0; i < rows; i++)
   {
-    for (size_t j = 0; j < cols; j++)
+    for (j = 0; j < cols; j++)
     {
       read(response, &seat, sizeof(seat));
       write(out_fd, &seat, sizeof(seat));
@@ -251,7 +254,7 @@ int ems_list_events(int out_fd)
 {
   // TODO: send list request to the server (through the request pipe) and wait for the response (through the response pipe)
   int ret;
-  size_t num_events;
+  size_t num_events, i;
   unsigned int event_id;
 
   if (write(request, "6", sizeof(char) == -1))
@@ -282,15 +285,15 @@ int ems_list_events(int out_fd)
 
   if (num_events == 0)
   {
-    write(out_fd, "No events.", sizeof("No events.\n"));
+    write(out_fd, "No events.\n", sizeof("No events.\n"));
     return 1;
   }
 
-  for (size_t i = 0; i < num_events; i++)
-  {
+  for (i = 0; i < num_events; i++)
+  { 
     read(response, &event_id, sizeof(event_id));
     write(out_fd, "Event: ", sizeof("Event: "));
-    write(out_fd, i, sizeof(int));
+    write(out_fd, &event_id, sizeof(unsigned int));
     write(out_fd, "\n", sizeof(char));
   }
   return 0;

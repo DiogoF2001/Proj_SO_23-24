@@ -99,7 +99,7 @@ enum Command get_next(int fd) {
       return CMD_INVALID;
     }
 
-    return CMD_BARRIER;
+    return CMD_EMPTY;
 
   case 'W':
     if (read(fd, buf + 1, 4) != 4 || strncmp(buf, "WAIT ", 5) != 0) {

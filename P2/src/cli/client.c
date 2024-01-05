@@ -7,7 +7,7 @@
 #include <fcntl.h>
 #include <errno.h>
 #include "constants.h"
-#include "operations.h"
+#include "api.h"
 #include "parser.h"
 
 #define MAX_RESERVATION_SIZE 256
@@ -17,12 +17,12 @@
 
 int main(int argc, char *argv[])
 {
-	int ret = 1, temp;
+	int temp;
 	char *out_path;
 	int in, out;
 	size_t name_size;
 	mode_t write_perms;
-	unsigned int event_id, delay, thread_id, i, temp_delay;
+	unsigned int event_id, delay, thread_id;
 	size_t num_rows, num_columns, num_coords;
 	size_t xs[MAX_RESERVATION_SIZE], ys[MAX_RESERVATION_SIZE];
 
@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
 				fprintf(stderr, "Invalid command. See HELP for usage\n");
 				continue;
 			}
-			if (ems_show(event_id, out))
+			if (ems_show(out, event_id))
 			{
 				fprintf(stderr, "Failed to show event\n");
 			}

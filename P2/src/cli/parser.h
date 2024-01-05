@@ -8,7 +8,6 @@ enum Command {
   CMD_RESERVE,
   CMD_SHOW,
   CMD_LIST_EVENTS,
-  CMD_BARRIER,
   CMD_WAIT,
   CMD_HELP,
   CMD_EMPTY,
