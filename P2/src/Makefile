@@ -7,6 +7,8 @@ CFLAGS =  -g -std=c17 -D_POSIX_C_SOURCE=200809L \
 #CFLAGS += -fsanitize=undefined 
 #CFLAGS += -fsanitize=thread
 
+DIR_PATH = jobs
+
 .PHONY = clean full all
 
 ifneq ($(shell uname -s),Darwin) # if not MacOS

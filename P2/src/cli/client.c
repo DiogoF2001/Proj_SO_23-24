@@ -10,10 +10,7 @@
 #include "api.h"
 #include "parser.h"
 
-#define MAX_RESERVATION_SIZE 256
-#define STATE_ACCESS_DELAY_US 500000 // 500ms
-#define MAX_JOB_FILE_NAME_SIZE 256
-#define MAX_SESSION_COUNT 8
+//#define STATE_ACCESS_DELAY_US 500000 // 500ms
 
 int main(int argc, char *argv[])
 {
@@ -42,8 +39,7 @@ int main(int argc, char *argv[])
 	}
 
 	const char *dot = strrchr(argv[4]+2, '.');
-	if (dot == NULL || dot == argv[4] || strlen(dot) != 5 || strcmp(dot, IN_EXT) ||
-		strlen(argv[4]) > MAX_JOB_FILE_NAME_SIZE)
+	if (dot == NULL || dot == argv[4] || strlen(dot) != 5 || strcmp(dot, IN_EXT))
 	{
 		fprintf(stderr, "The provided .jobs file path is not valid. Path: %s\n", argv[1]);
 		exit(1);

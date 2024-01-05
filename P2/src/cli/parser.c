@@ -5,8 +5,6 @@
 #include <string.h>
 #include <unistd.h>
 
-#include "constants.h"
-
 static int read_uint(int fd, unsigned int *value, char *next) {
   char buf[16];
 

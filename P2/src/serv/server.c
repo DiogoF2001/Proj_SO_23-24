@@ -13,9 +13,6 @@
 #include "operations.h"
 #include "pipe_parser.h"
 
-void *thread_func(void *);
-void signal_handler(int s);
-
 //Global Variables
 pthread_mutex_t buffer_lock;
 pthread_cond_t condit_w;
@@ -292,11 +289,6 @@ void *thread_func(void *args)
 	pthread_exit(0);
 }
 
-/*
-*Signal handler routine for SIGUSR1 and SIGINT:
-*	- for SIGINT, it only raises the flag
-*	- for SIGUSR, it changes the flag to the opposite
-*/
 void signal_handler(int s){
 	if(s == SIGUSR1){
 		if(signal_usr1)

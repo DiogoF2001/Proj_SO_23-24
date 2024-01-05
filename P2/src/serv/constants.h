@@ -13,4 +13,14 @@ typedef struct thread_args
 	char resp[40];
 } t_args;
 
+/*Function to call for new threads*/
+void *thread_func(void *);
+
+/*
+*Signal handler routine for SIGUSR1 and SIGINT:
+*	- for SIGINT, it only raises the flag
+*	- for SIGUSR, it changes the flag to the opposite
+*/
+void signal_handler(int s);
+
 #endif // CONSTANTS_H
