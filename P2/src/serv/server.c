@@ -34,7 +34,7 @@ int main(int argc, char *argv[])
 	char *in_path = NULL;
 	char *request = NULL;
 	t_args *new_client = NULL;
-	pthread_t tid;
+	pthread_t *tid;
 	int i;
 	unsigned int state_access_delay_ms = STATE_ACCESS_DELAY_MS;
 
@@ -128,17 +128,19 @@ int main(int argc, char *argv[])
 		ids[i] = i;
 	}
 
+	tid = malloc(sizeof(pthread_t) * MAX_SESSION);
+
 	for(i = 0; i < MAX_SESSION; i++){
-		pthread_create(&tid, 0, thread_func, (void*) &(ids[i]));
+		pthread_create(&(tid[i]), 0, thread_func, (void*) &(ids[i]));
 	}
 
 	while (running){
+		/*Flag used for SIGUSR1 and when raised inverts itself*/
 		if(signal_usr1){
 			ems_list_and_show_events(STDOUT_FILENO);
-			signal_usr1 = 0;
+			raise(SIGUSR1);
 		}
 		ret = read(incoming, request, sizeof(char) * (1 + 40 + 40));
-		printf("Received a register request with size %ld and read: %s\n", ret, request);
 		switch (ret){
 			case -1:
 				if(errno == EINTR)
@@ -173,8 +175,6 @@ int main(int argc, char *argv[])
 				new_client = malloc(sizeof(t_args));
 				strcpy(new_client->req, request+1);
 				strcpy(new_client->resp, request+1+40);
-				printf("request pipe: %s\n", new_client->req);
-				printf("response pipe: %s\n", new_client->resp);
 				buffer[writing] = new_client;
 				count_req++;
 				pthread_cond_signal(&condit_r);
@@ -186,10 +186,11 @@ int main(int argc, char *argv[])
 		}
 	}
 
-	/*for(i = 0; i < MAX_SESSION; i++){
-		;
-	}*/
+	for(i = 0; i < MAX_SESSION; i++){
+		pthread_join(tid[i], NULL);
+	}
 
+	free(tid);
 	free(ids);
 	pthread_mutex_destroy(&buffer_lock);
 	pthread_cond_destroy(&condit_w);
@@ -221,6 +222,8 @@ void *thread_func(void *args)
 		while (count_req == 0){
 			pthread_cond_wait(&condit_r, &buffer_lock);
 		}
+		if(!running)
+			break;;
 		t = buffer[reading];
 		in = open(t->req, O_RDONLY);
 		out = open(t->resp, O_WRONLY);
@@ -243,7 +246,6 @@ void *thread_func(void *args)
 						fprintf(stderr, "Invalid usage of CREATE operation\n");
 					}
 					func_ret = ems_create(event_id, num_rows, num_cols);
-					fprintf(stderr, "Created event %u and resulted in %d\n", event_id, func_ret);
 					write(out, &func_ret, sizeof(int));
 					if(func_ret){
 						fprintf(stderr, "Failed to create event\n");
@@ -255,7 +257,6 @@ void *thread_func(void *args)
 						fprintf(stderr, "Invalid usage of RESERVE operation\n");
 					}
 					func_ret = ems_reserve(event_id, num_coords, xs, ys);
-					fprintf(stderr, "Reserved event %u and resulted in %d\n", event_id, func_ret);
 					write(out, &func_ret, sizeof(int));
 					if(func_ret){
 						fprintf(stderr, "Failed to reserve seats\n");
@@ -266,7 +267,6 @@ void *thread_func(void *args)
 						fprintf(stderr, "Invalid usage of SHOW operation\n");
 					}
 					func_ret = ems_show(event_id, out);
-					fprintf(stderr, "Showed event %u and resulted in %d\n", event_id, func_ret);
 					if(func_ret){
 						fprintf(stderr, "Failed to show event\n");
 					}
@@ -276,7 +276,6 @@ void *thread_func(void *args)
 					if(func_ret){
 						fprintf(stderr, "Failed to list events\n");
 					}
-					fprintf(stderr, "Listed events and resulted in %d\n", func_ret);
 					break;
 				case OP_QUIT:
 					quit = 1;
@@ -293,9 +292,17 @@ void *thread_func(void *args)
 	pthread_exit(0);
 }
 
+/*
+*Signal handler routine for SIGUSR1 and SIGINT:
+*	- for SIGINT, it only raises the flag
+*	- for SIGUSR, it changes the flag to the opposite
+*/
 void signal_handler(int s){
 	if(s == SIGUSR1){
-		signal_usr1 = 1;
+		if(signal_usr1)
+			signal_usr1 = 0;
+		else
+			signal_usr1 = 1;
 		signal(SIGUSR1, signal_handler);
 	}
 	else{

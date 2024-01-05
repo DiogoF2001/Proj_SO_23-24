@@ -14,9 +14,6 @@ enum OP pipe_get_next(int fd)
 		return OP_INVALID;
 	}
 
-	//write(STDERR_FILENO, &buf, sizeof(char));
-	fprintf(stderr, "OP_CODE: %c\n", buf);
-
 	if(read(fd, &session_id, sizeof(int)) != sizeof(int)){
 		return OP_INVALID;
 	}
