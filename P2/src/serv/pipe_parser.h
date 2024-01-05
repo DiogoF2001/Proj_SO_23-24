@@ -32,7 +32,7 @@ int pipe_parse_create(int fd, unsigned int *event_id, size_t *num_rows,
 /// @param xs Pointer to the array to store the X coordinates in.
 /// @param ys Pointer to the array to store the Y coordinates in.
 /// @return Number of coordinates read. 0 on failure.
-size_t pipe_parse_reserve(int fd, unsigned int *event_id, size_t **xs, size_t **ys);
+size_t pipe_parse_reserve(int fd, unsigned int *event_id, size_t *xs, size_t *ys);
 
 /// Parses a SHOW operation.
 /// @param fd File descriptor to read from.

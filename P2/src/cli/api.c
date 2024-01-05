@@ -278,7 +278,7 @@ int ems_list_events(int out_fd)
     return 1;
   }
 
-  if (read(response, &num_events, sizeof(int)) == -1)
+  if (read(response, &num_events, sizeof(size_t)) == -1)
   {
     return 1;
   }

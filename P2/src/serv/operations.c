@@ -279,6 +279,9 @@ int ems_list_events(int fd)
     return 0;
   }
 
+  ret = 0;
+  write(fd, &ret, sizeof(int));
+
   struct ListNode *current = event_list->head;
   while (current != NULL)
   {

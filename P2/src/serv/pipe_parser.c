@@ -66,7 +66,7 @@ int pipe_parse_create(int fd, unsigned int *event_id, size_t *num_rows, size_t *
 
 // FIXME
 
-size_t pipe_parse_reserve(int fd, unsigned int *event_id, size_t **xs, size_t **ys)
+size_t pipe_parse_reserve(int fd, unsigned int *event_id, size_t *xs, size_t *ys)
 {
 	size_t num_seats = 0, val, i;
 
@@ -80,10 +80,7 @@ size_t pipe_parse_reserve(int fd, unsigned int *event_id, size_t **xs, size_t **
 		return 0;
 	}
 
-	*xs = malloc(sizeof(size_t) * num_seats);
-	*ys = malloc(sizeof(size_t) * num_seats);
-
-	if (*xs == NULL || *ys == NULL){
+	if (xs == NULL || ys == NULL){
 		write(STDERR_FILENO, "[Err]: malloc failed in parse_reserve\n", sizeof("[Err]: malloc failed in parse_reserve\n"));
 	}
 
@@ -91,14 +88,14 @@ size_t pipe_parse_reserve(int fd, unsigned int *event_id, size_t **xs, size_t **
 		if (read(fd, &val, sizeof(size_t)) != sizeof(size_t)){
 			return 0;
 		}
-		*xs[i] = val;
+		xs[i] = val;
 	}
 
 	for (i = 0; i < num_seats; i++){
 		if (read(fd, &val, sizeof(size_t)) != sizeof(size_t)){
 			return 0;
 		}
-		*ys[i] = val;
+		ys[i] = val;
 	}
 
 	return num_seats;

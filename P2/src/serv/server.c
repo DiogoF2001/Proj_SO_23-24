@@ -185,6 +185,11 @@ int main(int argc, char *argv[])
 				break;
 		}
 	}
+
+	/*for(i = 0; i < MAX_SESSION; i++){
+		;
+	}*/
+
 	free(ids);
 	pthread_mutex_destroy(&buffer_lock);
 	pthread_cond_destroy(&condit_w);
@@ -203,11 +208,12 @@ void *thread_func(void *args)
 	int func_ret = 0, in, out;
 	t_args *t;
 	size_t num_rows, num_cols, num_coords;
-	size_t *xs = NULL, *ys = NULL;
+	size_t xs[MAX_RESERVATION_SIZE], ys[MAX_RESERVATION_SIZE];
 	sigset_t set;
 
 	sigemptyset(&set);
 	sigaddset(&set, SIGUSR1);
+	sigaddset(&set, SIGINT);
 	pthread_sigmask(SIG_BLOCK, &set, NULL);
 
 	while (running){
@@ -237,30 +243,30 @@ void *thread_func(void *args)
 						fprintf(stderr, "Invalid usage of CREATE operation\n");
 					}
 					func_ret = ems_create(event_id, num_rows, num_cols);
-					fprintf(stderr, "Created an event\n");
+					fprintf(stderr, "Created event %u and resulted in %d\n", event_id, func_ret);
 					write(out, &func_ret, sizeof(int));
 					if(func_ret){
 						fprintf(stderr, "Failed to create event\n");
 					}
 					break;
 				case OP_RESERVE:
-					num_coords = pipe_parse_reserve(in, &event_id, &xs, &ys);
+					num_coords = pipe_parse_reserve(in, &event_id, xs, ys);
 					if(num_coords == 0){
 						fprintf(stderr, "Invalid usage of RESERVE operation\n");
 					}
 					func_ret = ems_reserve(event_id, num_coords, xs, ys);
+					fprintf(stderr, "Reserved event %u and resulted in %d\n", event_id, func_ret);
 					write(out, &func_ret, sizeof(int));
 					if(func_ret){
 						fprintf(stderr, "Failed to reserve seats\n");
 					}
-					free(xs);
-					free(ys);
 					break;
 				case OP_SHOW:
 					if(pipe_parse_show(in, &event_id)){
 						fprintf(stderr, "Invalid usage of SHOW operation\n");
 					}
 					func_ret = ems_show(event_id, out);
+					fprintf(stderr, "Showed event %u and resulted in %d\n", event_id, func_ret);
 					if(func_ret){
 						fprintf(stderr, "Failed to show event\n");
 					}
@@ -270,6 +276,7 @@ void *thread_func(void *args)
 					if(func_ret){
 						fprintf(stderr, "Failed to list events\n");
 					}
+					fprintf(stderr, "Listed events and resulted in %d\n", func_ret);
 					break;
 				case OP_QUIT:
 					quit = 1;
@@ -287,12 +294,15 @@ void *thread_func(void *args)
 }
 
 void signal_handler(int s){
-	if(s == SIGUSR1)
+	if(s == SIGUSR1){
 		signal_usr1 = 1;
-	else{
-		if(s == SIGINT)
-			running = 0;
+		signal(SIGUSR1, signal_handler);
 	}
-	signal(SIGUSR1, signal_handler);
-	signal(SIGINT, signal_handler);
+	else{
+		if(s == SIGINT){
+			running = 0;
+			signal(SIGINT, signal_handler);
+
+		}
+	}
 }

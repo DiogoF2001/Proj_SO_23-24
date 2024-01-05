@@ -5,6 +5,7 @@
 #define MAX_SESSION 	8
 #define PROD_CONS_SIZE	20
 #define STATE_ACCESS_DELAY_MS 10
+#define MAX_RESERVATION_SIZE 256
 
 typedef struct thread_args
 {

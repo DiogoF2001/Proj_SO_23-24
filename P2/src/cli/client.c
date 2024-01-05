@@ -41,7 +41,7 @@ int main(int argc, char *argv[])
 		return 1;
 	}
 
-	const char *dot = strrchr(argv[4], '.');
+	const char *dot = strrchr(argv[4]+2, '.');
 	if (dot == NULL || dot == argv[4] || strlen(dot) != 5 || strcmp(dot, IN_EXT) ||
 		strlen(argv[4]) > MAX_JOB_FILE_NAME_SIZE)
 	{
@@ -49,16 +49,16 @@ int main(int argc, char *argv[])
 		exit(1);
 	}
 
-	name_size = strlen(argv[4]) - strlen(strchr(argv[4], '.'));
+	name_size = strlen(argv[4]) - strlen(IN_EXT);
 	out_path = malloc(sizeof(char) * (name_size + strlen(OUT_EXT) + 1));
 	if (out_path == NULL)
 	{
 		fprintf(stderr, "malloc failed for out_path\n");
 		exit(1);
 	}
-	strcpy(out_path, argv[4]);
-	strcpy(strchr(out_path, '.'), OUT_EXT);
-	printf("%s\n%s\n",argv[4], out_path);
+	strncpy(out_path, argv[4], name_size);
+	out_path[name_size] = '\0';
+	strcat(out_path, OUT_EXT);
 
 	in = open(argv[4], O_RDONLY);
 	if (in == -1) {
