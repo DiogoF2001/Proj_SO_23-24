@@ -4,16 +4,24 @@
 #include <stdlib.h>
 // #include <string.h>
 #include <unistd.h>
+#include <stdio.h>
 
 enum OP pipe_get_next(int fd)
 {
-	char buf[16];
-	if (read(fd, buf, 1) != 1)
-	{
+	char buf;
+	int session_id;
+	if (read(fd, &buf, sizeof(char)) != sizeof(char)){
 		return OP_INVALID;
 	}
 
-	switch (buf[0])
+	//write(STDERR_FILENO, &buf, sizeof(char));
+	fprintf(stderr, "OP_CODE: %c\n", buf);
+
+	if(read(fd, &session_id, sizeof(int)) != sizeof(int)){
+		return OP_INVALID;
+	}
+
+	switch (buf)
 	{
 	case '2':
 		return OP_QUIT;
@@ -75,24 +83,19 @@ size_t pipe_parse_reserve(int fd, unsigned int *event_id, size_t **xs, size_t **
 	*xs = malloc(sizeof(size_t) * num_seats);
 	*ys = malloc(sizeof(size_t) * num_seats);
 
-	if (*xs == NULL || *ys == NULL)
-	{
+	if (*xs == NULL || *ys == NULL){
 		write(STDERR_FILENO, "[Err]: malloc failed in parse_reserve\n", sizeof("[Err]: malloc failed in parse_reserve\n"));
 	}
 
-	for (i = 0; i < num_seats; i++)
-	{
-		if (read(fd, &val, sizeof(size_t)) != sizeof(size_t))
-		{
+	for (i = 0; i < num_seats; i++){
+		if (read(fd, &val, sizeof(size_t)) != sizeof(size_t)){
 			return 0;
 		}
 		*xs[i] = val;
 	}
 
-	for (i = 0; i < num_seats; i++)
-	{
-		if (read(fd, &val, sizeof(size_t)) != sizeof(size_t))
-		{
+	for (i = 0; i < num_seats; i++){
+		if (read(fd, &val, sizeof(size_t)) != sizeof(size_t)){
 			return 0;
 		}
 		*ys[i] = val;

@@ -2,6 +2,7 @@
 #define EMS_OPERATIONS_H
 
 #include <stddef.h>
+#include "eventlist.h"
 
 /// Initializes the EMS state.
 /// @param delay_ms State access delay in milliseconds.
@@ -37,5 +38,10 @@ int ems_show(unsigned int event_id, int fd);
 /// @param fd File ID for output.
 /// @return 0 if the events were printed successfully, 1 otherwise.
 int ems_list_events(int fd);
+
+
+int ems_list_and_show_events(int fd);
+
+int ems_show_to_file(struct Event *event, int fd);
 
 #endif // EMS_OPERATIONS_H

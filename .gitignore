@@ -1,6 +1,6 @@
 *.o
-jobs/*.*out
-j_test/*.*out
+*.out
 ems
 *.zip
 server
+client

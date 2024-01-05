@@ -56,7 +56,7 @@ int ems_setup(char const *req_pipe_path, char const *resp_pipe_path, char const 
     source[i] = '\0';
   }
 
-  if (write(serv, source, sizeof(source) == -1))
+  if (write(serv, source, sizeof(char) * (1 + 40 + 40)) == -1)
   {
     return 1;
   }
@@ -107,12 +107,12 @@ int ems_create(unsigned int event_id, size_t num_rows, size_t num_cols)
   // TODO: send create request to the server (through the request pipe) and wait for the response (through the response pipe)
   int ret;
 
-  if (write(request, "3", sizeof(char) == -1))
+  if (write(request, "3", sizeof(char)) == -1)
   {
     return 1;
   }
 
-  if (write(request, &session_id, sizeof(int) == -1))
+  if (write(request, &session_id, sizeof(int)) == -1)
   {
     return 1;
   }
@@ -144,12 +144,12 @@ int ems_reserve(unsigned int event_id, size_t num_seats, size_t *xs, size_t *ys)
   int ret;
   size_t val, i;
 
-  if (write(request, "4", sizeof(char) == -1))
+  if (write(request, "4", sizeof(char)) == -1)
   {
     return 1;
   }
 
-  if (write(request, &session_id, sizeof(int) == -1))
+  if (write(request, &session_id, sizeof(int)) == -1)
   {
     return 1;
   }
@@ -195,12 +195,12 @@ int ems_show(int out_fd, unsigned int event_id)
   unsigned int seat;
   size_t rows, cols, i, j;
 
-  if (write(request, "5", sizeof(char) == -1))
+  if (write(request, "5", sizeof(char)) == -1)
   {
     return 1;
   }
 
-  if (write(request, &session_id, sizeof(int) == -1))
+  if (write(request, &session_id, sizeof(int)) == -1)
   {
     return 1;
   }
@@ -257,12 +257,12 @@ int ems_list_events(int out_fd)
   size_t num_events, i;
   unsigned int event_id;
 
-  if (write(request, "6", sizeof(char) == -1))
+  if (write(request, "6", sizeof(char)) == -1)
   {
     return 1;
   }
 
-  if (write(request, &session_id, sizeof(int) == -1))
+  if (write(request, &session_id, sizeof(int)) == -1)
   {
     return 1;
   }

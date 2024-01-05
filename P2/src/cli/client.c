@@ -56,8 +56,9 @@ int main(int argc, char *argv[])
 		fprintf(stderr, "malloc failed for out_path\n");
 		exit(1);
 	}
-	strncat(out_path, argv[4], name_size);
-	strcat(out_path, OUT_EXT);
+	strcpy(out_path, argv[4]);
+	strcpy(strchr(out_path, '.'), OUT_EXT);
+	printf("%s\n%s\n",argv[4], out_path);
 
 	in = open(argv[4], O_RDONLY);
 	if (in == -1) {

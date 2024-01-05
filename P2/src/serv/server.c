@@ -7,12 +7,14 @@
 #include <semaphore.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <signal.h>
 
 #include "constants.h"
 #include "operations.h"
 #include "pipe_parser.h"
 
 void *thread_func(void *);
+void signal_handler(int s);
 
 //Global Variables
 pthread_mutex_t buffer_lock;
@@ -21,6 +23,8 @@ pthread_cond_t condit_r;
 unsigned int writing;
 unsigned int reading;
 unsigned int count_req;
+unsigned int signal_usr1;
+unsigned int running;
 t_args **buffer;
 
 int main(int argc, char *argv[])
@@ -32,6 +36,16 @@ int main(int argc, char *argv[])
 	t_args *new_client = NULL;
 	pthread_t tid;
 	int i;
+	unsigned int state_access_delay_ms = STATE_ACCESS_DELAY_MS;
+
+	running = 1;
+	signal_usr1 = 0;
+	if (signal(SIGINT, signal_handler) == SIG_ERR) {
+		exit(EXIT_FAILURE);
+	}
+	if (signal(SIGUSR1, signal_handler) == SIG_ERR) {
+		exit(EXIT_FAILURE);
+	}
 
 	if (argc < 2 || argc > 3)
 	{
@@ -72,6 +86,11 @@ int main(int argc, char *argv[])
 		exit(EXIT_FAILURE);
 	}
 
+	if (ems_init(state_access_delay_ms)) {
+		fprintf(stderr, "Failed to initialize EMS\n");
+		exit(1);
+	}
+
 	for(i = 0; i < PROD_CONS_SIZE; i++){
 		buffer[i] = malloc(sizeof(t_args));
 		if(buffer[i] == NULL){
@@ -90,27 +109,59 @@ int main(int argc, char *argv[])
 
 	// Open pipe for reading
 	// This waits for someone to open it for writing
-	incoming = open(in_path, O_RDONLY);
-	if (incoming == -1)
-	{
-		fprintf(stderr, "[ERR]: open failed: %s\n", strerror(errno));
-		exit(EXIT_FAILURE);
+	// While loop in case of a signal interruption
+	while(1){
+		incoming = open(in_path, O_RDONLY);
+		if (incoming == -1)
+		{
+			if(errno == EINTR)
+				continue;
+			fprintf(stderr, "[ERR]: open failed: %s\n", strerror(errno));
+			exit(EXIT_FAILURE);
+		}
+		else
+			break;
+	}
+
+	int *ids = malloc(sizeof(int)*MAX_SESSION);
+	for(i=0;i<MAX_SESSION;i++){
+		ids[i] = i;
 	}
 
 	for(i = 0; i < MAX_SESSION; i++){
-		pthread_create(&tid, 0, thread_func, (void*) new_client);
+		pthread_create(&tid, 0, thread_func, (void*) &(ids[i]));
 	}
 
-	while (1){
+	while (running){
+		if(signal_usr1){
+			ems_list_and_show_events(STDOUT_FILENO);
+			signal_usr1 = 0;
+		}
 		ret = read(incoming, request, sizeof(char) * (1 + 40 + 40));
+		printf("Received a register request with size %ld and read: %s\n", ret, request);
 		switch (ret){
 			case -1:
+				if(errno == EINTR)
+					continue;
 				fprintf(stderr, "[Err]: invalid incoming message format\n");
 				exit(EXIT_FAILURE);
 				break;
 			case 0:
+				close(incoming);
+				while(1){
+					incoming = open(in_path, O_RDONLY);
+					if (incoming == -1)
+					{
+						if(errno == EINTR)
+							continue;
+						fprintf(stderr, "[ERR]: open failed: %s\n", strerror(errno));
+						exit(EXIT_FAILURE);
+					}
+					else
+						break;
+				}
 				continue;
-			case 40:
+			case 81:
 				if(request[0] != '1'){
 					fprintf(stderr, "Wrong OP_CODE for this pipe\n");
 					continue;
@@ -122,6 +173,8 @@ int main(int argc, char *argv[])
 				new_client = malloc(sizeof(t_args));
 				strcpy(new_client->req, request+1);
 				strcpy(new_client->resp, request+1+40);
+				printf("request pipe: %s\n", new_client->req);
+				printf("response pipe: %s\n", new_client->resp);
 				buffer[writing] = new_client;
 				count_req++;
 				pthread_cond_signal(&condit_r);
@@ -129,10 +182,10 @@ int main(int argc, char *argv[])
 				pthread_mutex_unlock(&buffer_lock);
 				break;
 			default:
-				// FIXME
 				break;
 		}
 	}
+	free(ids);
 	pthread_mutex_destroy(&buffer_lock);
 	pthread_cond_destroy(&condit_w);
 	pthread_cond_destroy(&condit_r);
@@ -145,15 +198,19 @@ int main(int argc, char *argv[])
 
 void *thread_func(void *args)
 {
+	int session_id = * ((int*) args);
 	unsigned int event_id, quit = 0;
 	int func_ret = 0, in, out;
-	char OP_CODE;
-	t_args *t = (t_args *)args;
-	ssize_t ret = -1;
+	t_args *t;
 	size_t num_rows, num_cols, num_coords;
 	size_t *xs = NULL, *ys = NULL;
+	sigset_t set;
 
-	while (1/*should be a signal*/){
+	sigemptyset(&set);
+	sigaddset(&set, SIGUSR1);
+	pthread_sigmask(SIG_BLOCK, &set, NULL);
+
+	while (running){
 		pthread_mutex_lock(&buffer_lock);
 		while (count_req == 0){
 			pthread_cond_wait(&condit_r, &buffer_lock);
@@ -171,21 +228,16 @@ void *thread_func(void *args)
 		pthread_cond_signal(&condit_w);
 		pthread_mutex_unlock(&buffer_lock);
 
+		write(out, &session_id, sizeof(int));
+
 		while(1){
-			ret = read(in, &OP_CODE, 1);
-			if(ret == 0 ){
-				break;
-			}
-			if(ret == -1){
-				fprintf(stderr, "[ERR]: read from client pipe failed\n");
-				exit(1);
-			}
 			switch (pipe_get_next(in)){
 				case OP_CREATE:
 					if(pipe_parse_create(in, &event_id, &num_rows, &num_cols) != 0){
 						fprintf(stderr, "Invalid usage of CREATE operation\n");
 					}
 					func_ret = ems_create(event_id, num_rows, num_cols);
+					fprintf(stderr, "Created an event\n");
 					write(out, &func_ret, sizeof(int));
 					if(func_ret){
 						fprintf(stderr, "Failed to create event\n");
@@ -232,4 +284,15 @@ void *thread_func(void *args)
 		close(out);
 	}
 	pthread_exit(0);
+}
+
+void signal_handler(int s){
+	if(s == SIGUSR1)
+		signal_usr1 = 1;
+	else{
+		if(s == SIGINT)
+			running = 0;
+	}
+	signal(SIGUSR1, signal_handler);
+	signal(SIGINT, signal_handler);
 }

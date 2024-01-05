@@ -298,3 +298,65 @@ int ems_list_events(int fd)
 
   return 0;
 }
+
+int ems_show_to_file(struct Event *event, int fd) {
+  char temp[10];
+
+  if (event == NULL) {
+    fprintf(stderr, "Event not found\n");
+    return 1;
+  }
+
+  pthread_rwlock_rdlock(&(event->event_lock));
+
+  for (size_t i = 1; i <= event->rows; i++) {
+    for (size_t j = 1; j <= event->cols; j++) {
+      unsigned int *seat = get_seat_with_delay(event, seat_index(event, i, j));
+      // printf("%u", *seat);
+      sprintf(temp, "%u", *seat);
+      write(fd, temp, strlen(temp));
+
+      if (j < event->cols) {
+        // printf(" ");
+        write(fd, " ", 1);
+      }
+    }
+    write(fd, "\n", 1);
+  }
+  pthread_rwlock_unlock(&(event->event_lock));
+
+  return 0;
+}
+
+int ems_list_and_show_events(int fd) {
+  char temp[10];
+
+  pthread_rwlock_rdlock(list_lock);
+
+  if (event_list == NULL) {
+    fprintf(stderr, "EMS state must be initialized\n");
+	pthread_rwlock_unlock(list_lock);
+    return 1;
+  }
+
+  if (event_list->head == NULL) {
+    write(fd, "No events\n", strlen("No events\n"));
+    // printf("No events\n");
+	pthread_rwlock_unlock(list_lock);
+    return 0;
+  }
+
+  struct ListNode *current = event_list->head;
+  while (current != NULL) {
+    write(fd, "Event: ", strlen("Event: "));
+    sprintf(temp, "%u", (current->event)->id);
+    write(fd, temp, strlen(temp));
+    write(fd, "\n", strlen("\n"));
+	ems_show_to_file(current->event, fd);
+    current = current->next;
+  }
+
+  pthread_rwlock_unlock(list_lock);
+
+  return 0;
+}
