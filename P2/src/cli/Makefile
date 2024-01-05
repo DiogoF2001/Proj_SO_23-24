@@ -27,6 +27,6 @@ client: client.c constants.h parser.o api.o
 	$(CC) $(CFLAGS) -c ${@:.o=.c}
 
 clean:
-	rm -f *.o $(DIR_PATH)/*.myout $(TEST_DIR_PATH)/*.myout client
+	rm -f *.o $(DIR_PATH)/*.out $(TEST_DIR_PATH)/*.out client
 
 full: clean all

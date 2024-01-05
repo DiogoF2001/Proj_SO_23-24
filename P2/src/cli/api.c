@@ -235,7 +235,7 @@ int ems_show(int out_fd, unsigned int event_id)
     {
       read(response, &seat, sizeof(seat));
       sprintf(temp,"%u",seat);
-      write(out_fd, temp, sizeof(temp));
+      write(out_fd, temp, sizeof(char) * strlen(temp));
 
       if (j < cols)
       {
@@ -284,16 +284,16 @@ int ems_list_events(int out_fd)
 
   if (num_events == 0)
   {
-    write(out_fd, "No events.\n", sizeof("No events.\n"));
+    write(out_fd, "No events.\n", sizeof(char) * strlen("No events.\n"));
     return 1;
   }
 
   for (i = 0; i < num_events; i++)
   { 
     read(response, &event_id, sizeof(event_id));
-    write(out_fd, "Event: ", sizeof("Event: "));
+    write(out_fd, "Event: ", sizeof(char) * strlen("Event: "));
     sprintf(temp, "%u", event_id);
-    write(out_fd, temp, sizeof(temp));
+    write(out_fd, temp, sizeof(char) * strlen(temp));
     write(out_fd, "\n", sizeof(char));
   }
   return 0;

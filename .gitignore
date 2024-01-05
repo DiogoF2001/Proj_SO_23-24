@@ -3,4 +3,4 @@
 ems
 *.zip
 server
-client
+cli/client

@@ -27,6 +27,6 @@ server: server.c constants.h operations.o pipe_parser.o eventlist.o
 	$(CC) $(CFLAGS) -c ${@:.o=.c}
 
 clean:
-	rm -f *.o $(DIR_PATH)/*.myout $(TEST_DIR_PATH)/*.myout server
+	rm -f *.o $(DIR_PATH)/*.out $(TEST_DIR_PATH)/*.out server
 
 full: clean all
