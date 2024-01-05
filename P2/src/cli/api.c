@@ -8,6 +8,8 @@
 #include <sys/stat.h>
 #include <stdlib.h>
 
+#include "constants.h"
+
 /*Global variables*/
 int request, response, session_id;
 
@@ -189,6 +191,7 @@ int ems_show(int out_fd, unsigned int event_id)
   int ret;
   unsigned int seat;
   size_t rows, cols, i, j;
+  char temp[MAX_VALUE_UNSIGNED_INT];
 
   if (write(request, "5", sizeof(char)) == -1)
   {
@@ -231,7 +234,8 @@ int ems_show(int out_fd, unsigned int event_id)
     for (j = 0; j < cols; j++)
     {
       read(response, &seat, sizeof(seat));
-      write(out_fd, &seat, sizeof(seat));
+      sprintf(temp,"%u",seat);
+      write(out_fd, temp, sizeof(temp));
 
       if (j < cols)
       {
@@ -250,6 +254,7 @@ int ems_list_events(int out_fd)
   int ret;
   size_t num_events, i;
   unsigned int event_id;
+  char temp[MAX_VALUE_UNSIGNED_INT];
 
   if (write(request, "6", sizeof(char)) == -1)
   {
@@ -287,7 +292,8 @@ int ems_list_events(int out_fd)
   { 
     read(response, &event_id, sizeof(event_id));
     write(out_fd, "Event: ", sizeof("Event: "));
-    write(out_fd, &event_id, sizeof(unsigned int));
+    sprintf(temp, "%u", event_id);
+    write(out_fd, temp, sizeof(temp));
     write(out_fd, "\n", sizeof(char));
   }
   return 0;
