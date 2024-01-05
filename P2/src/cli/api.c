@@ -8,12 +8,13 @@
 #include <sys/stat.h>
 #include <stdlib.h>
 
-/*Variaveis Globais*/
+#include "constants.h"
+
+/*Global variables*/
 int request, response, session_id;
 
 int ems_setup(char const *req_pipe_path, char const *resp_pipe_path, char const *server_pipe_path)
 {
-  // TODO: create pipes and connect to the server
   size_t i;
   if (unlink(req_pipe_path) != 0 && errno != ENOENT)
   {
@@ -85,7 +86,6 @@ int ems_setup(char const *req_pipe_path, char const *resp_pipe_path, char const 
 
 int ems_quit(void)
 {
-  // TODO: close pipes
   if (write(request, "2", sizeof(char) == -1))
   {
     return 1;
@@ -104,7 +104,6 @@ int ems_quit(void)
 
 int ems_create(unsigned int event_id, size_t num_rows, size_t num_cols)
 {
-  // TODO: send create request to the server (through the request pipe) and wait for the response (through the response pipe)
   int ret;
 
   if (write(request, "3", sizeof(char)) == -1)
@@ -140,7 +139,6 @@ int ems_create(unsigned int event_id, size_t num_rows, size_t num_cols)
 
 int ems_reserve(unsigned int event_id, size_t num_seats, size_t *xs, size_t *ys)
 {
-  // TODO: send reserve request to the server (through the request pipe) and wait for the response (through the response pipe)
   int ret;
   size_t val, i;
 
@@ -190,10 +188,10 @@ int ems_reserve(unsigned int event_id, size_t num_seats, size_t *xs, size_t *ys)
 
 int ems_show(int out_fd, unsigned int event_id)
 {
-  // TODO: send show request to the server (through the request pipe) and wait for the response (through the response pipe)
   int ret;
   unsigned int seat;
   size_t rows, cols, i, j;
+  char temp[MAX_VALUE_UNSIGNED_INT];
 
   if (write(request, "5", sizeof(char)) == -1)
   {
@@ -236,7 +234,8 @@ int ems_show(int out_fd, unsigned int event_id)
     for (j = 0; j < cols; j++)
     {
       read(response, &seat, sizeof(seat));
-      write(out_fd, &seat, sizeof(seat));
+      sprintf(temp,"%u",seat);
+      write(out_fd, temp, sizeof(temp));
 
       if (j < cols)
       {
@@ -252,10 +251,10 @@ int ems_show(int out_fd, unsigned int event_id)
 
 int ems_list_events(int out_fd)
 {
-  // TODO: send list request to the server (through the request pipe) and wait for the response (through the response pipe)
   int ret;
   size_t num_events, i;
   unsigned int event_id;
+  char temp[MAX_VALUE_UNSIGNED_INT];
 
   if (write(request, "6", sizeof(char)) == -1)
   {
@@ -293,7 +292,8 @@ int ems_list_events(int out_fd)
   { 
     read(response, &event_id, sizeof(event_id));
     write(out_fd, "Event: ", sizeof("Event: "));
-    write(out_fd, &event_id, sizeof(unsigned int));
+    sprintf(temp, "%u", event_id);
+    write(out_fd, temp, sizeof(temp));
     write(out_fd, "\n", sizeof(char));
   }
   return 0;
